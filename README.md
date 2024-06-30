@@ -4,3 +4,6 @@ Free license: developer
 
 # School's timetable
 First attempt to realize programm for creating timetable on Python
+
+## Libraries (библиотеки)
+`customtkinter`, `pandas`, `requests`, `CTkMessageBox`, `CTkTable`
