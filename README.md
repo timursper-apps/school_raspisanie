@@ -1,4 +1,5 @@
 Free license: developer
+Download the latest version.: https://sourceforge.net/projects/schraspis/
 # Школьное расписание
 Первая попытка реализовать программу для создания расписания на Python
 
