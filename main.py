@@ -1,16 +1,17 @@
-import sqlite3, customtkinter as ct, pandas as pd, requests, webbrowser as wb
+import sqlite3, customtkinter as ct, pandas as pd, requests, webbrowser as wb, os
 from CTkMessagebox import CTkMessagebox as mb
 from CTkTable import *
-
-version = "1.2"
+from tkinter import *
+from tkhtmlview import HTMLLabel
+version = "1.3"
 
 activated = False
 
 connection = sqlite3.connect("timetable.db")
 cursor = connection.cursor()
 
-tgusername = "aisucheba"
-linkForAds = f"https://t.me/{tgusername}"
+tgusername = "timursper_community"
+linkForAds = f"https://vk.com/{tgusername}"
 
 keyconn = sqlite3.connect("keys.db")
 keycurs = keyconn.cursor()
@@ -32,13 +33,12 @@ connection.commit()
 
 root = ct.CTk()
 root.title(f"Школьное расписание {version}")
-root.geometry("460x340")
+root.geometry("460x400")
 #pws.apply_style(root, "aero")
 
 days = ['понедельник', 'вторник', 'среда', 'четврерг', 'пятница', 'суббота']
 
 def callsSchedule():
-    mb(message="Расписание звонков не связано с основным расписанием! Вы можете использовать данный раздел для отчёта", icon="info", option_1="ОК")
     callsr = ct.CTk()
     callsr.title("Менеджер расписания звонков")
     callsr.geometry("550x150")
@@ -141,8 +141,8 @@ def delDay():
             mb(message="День был успешно удалён!", icon="check", option_1="Отлично!")
 
 def operationsWithDay():
-    global dayName, cabinets, teachers
-    try:
+        global dayName, cabinets, teachers, calls
+   
         addNewLesson = ct.CTk()
         addNewLesson.title("Добавление нового урока")
         addNewLesson.geometry("750x150")
@@ -159,8 +159,7 @@ def operationsWithDay():
         nameOfLesson = ct.CTkEntry(addNewLesson, placeholder_text="Введите название предмета", width=190)
         nameOfLesson.place(x=30, y=25)
 
-        timeOfLesson = ct.CTkEntry(addNewLesson, placeholder_text="Введите время проведения", width=180)
-        timeOfLesson.place(x=220, y=25)
+        
 
         def add():
             try:
@@ -193,6 +192,10 @@ def operationsWithDay():
             else:
                 mb(message="В расписании установлено окно!", icon="check", option_1="Отлично!")
 
+        timeOfLesson = ct.CTkComboBox(addNewLesson, values=calls, width=180)
+        timeOfLesson.place(x=220, y=25)
+        timeOfLesson.set("Выберите урок")
+
         teacherLesson = ct.CTkComboBox(addNewLesson, values=teachers, width=160)
         teacherLesson.place(x=400, y=25)
         teacherLesson.set("Выберите учителя")
@@ -217,14 +220,14 @@ def operationsWithDay():
             mb(title="Предупреждение!", message="В данном дне отстутствуют уроки. Время для их добавления!", icon="warning")
 
         addNewLesson.mainloop()
-    except:
         mb(title="Ошибка!", message="Произошла ошибка при открытии! Проверьте существование дня!", icon="cancel")
+    
 
 def checktt():
     global dayName
 
     if not activated:
-        ad = mb(title="Реклама", message="Заходите в телеграмм-канал автора!", option_1="Перейти", cancel_button="None")
+        ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти", cancel_button="None")
         if ad.get() == "Перейти":
             wb.open_new_tab(linkForAds)
 
@@ -344,11 +347,20 @@ for x in range(len(teachersWithoutFilter)):
     for y in range(len(teachersWithoutFilter[x])):
         teachers.append(teachersWithoutFilter[x][y])
 
+cursor.execute("SELECT * FROM calls")
+callsWithoutFilter = cursor.fetchall()
+calls = []
+
+for x in range(len(callsWithoutFilter)):
+    calls.append(str(callsWithoutFilter[x]).replace("(","").replace(")","").replace("'", "").replace(",",":"))
+
+print(calls)
+
 def addCabinet():
     global cabinets
 
     if not activated:
-        ad = mb(title="Реклама", message="Заходите в телеграмм-канал автора!", option_1="Перейти", cancel_button="None")
+        ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти", cancel_button="None")
         if ad.get() == "Перейти":
             wb.open_new_tab(linkForAds)
 
@@ -373,7 +385,7 @@ def addCabinet():
 
     def addCab():
         if not activated:
-            ad = mb(title="Реклама", message="Заходите в телеграмм-канал автора!", option_1="Перейти")
+            ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти")
             if ad.get() == "Перейти":
                 wb.open_new_tab(linkForAds)
         try:
@@ -387,7 +399,7 @@ def addCabinet():
     
     def remCab():
         if not activated:
-            ad = mb(title="Реклама", message="Заходите в телеграмм-канал автора!", option_1="Перейти")
+            ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти")
             if ad.get() == "Перейти":
                 wb.open_new_tab(linkForAds)
         try:
@@ -413,7 +425,7 @@ def addTeacher():
     global teachers
 
     if not activated:
-        ad = mb(title="Реклама", message="Заходите в телеграмм-канал автора!", option_1="Перейти", cancel_button="None")
+        ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти", cancel_button="None")
         if ad.get() == "Перейти":
             wb.open_new_tab(linkForAds)
 
@@ -490,7 +502,26 @@ def publishTimetable():
 
         pub.mainloop()
 
-dayName = ct.CTkEntry(root, placeholder_text="Введите день недели", width=210)
+def checkTimetableByTeacher():
+    day = dayName.get()
+    teacher = ""
+
+    selTeach = ct.CTk()
+    selTeach.title("Просмотр расписания")
+
+    def showTT():
+        teacher = teacherName.get()
+        cursor.execute(f"SELECT №, Время, Предмет, Кабинет FROM {day} WHERE Учитель = ?", (teacher,))
+        tt = CTkTable(selTeach, values=cursor.fetchall()).grid(rowspan = 4, row=1, column=0)
+    
+    teacherName = ct.CTkComboBox(selTeach, values=teachers)
+    teacherName.grid(row=0, column=0)
+
+    showTimetable = ct.CTkButton(selTeach, text="Показать", width=100, command=showTT).grid(row=0, column=1)
+
+    selTeach.mainloop()
+
+dayName = ct.CTkComboBox(root, values=days, width=170)
 dayName.place(x=125,y=0)
 
 tip = ct.CTkLabel(root, text="Перед созданием расписания", font=("Arial", 15, "bold")).place(y=28)
@@ -498,11 +529,10 @@ addClass = ct.CTkButton(root, text="Добавить кабинеты", command=
 addTeachers = ct.CTkButton(root, text="Добавить учителей", command=addTeacher, width=210).place(y=84)
 
 tip = ct.CTkLabel(root, text="Работа с расписанием", font=("Arial", 15, "bold")).place(x=250, y=28)
-openDay = ct.CTkButton(root, text="Изменить расписание на день", command=operationsWithDay, width=210).place(x=250, y=56)
-createDay = ct.CTkButton(root, text="Создать день", command=createDayFunc, width=210).place(x=250, y=84)
-deleteDay = ct.CTkButton(root, text="Удалить день", command=delDay, width=210).place(x=250, y=112)
-callsScheduleB = ct.CTkButton(root, text="Расписание звонков", command=callsSchedule, width=210).place(x=250, y=140)
-checkTimeTable = ct.CTkButton(root, text="Посмотреть расписание", command=checktt, width=210).place(x=250, y=168)
+checkTtByTeacher = ct.CTkButton(root, text="Просмотр расписания учителя", width=210, command=checkTimetableByTeacher).place(x=250, y=56)
+openDay = ct.CTkButton(root, text="Изменить расписание на день", command=operationsWithDay, width=210).place(x=250, y=84)
+callsScheduleB = ct.CTkButton(root, text="Расписание звонков", command=callsSchedule, width=210).place(x=250, y=112)
+checkTimeTable = ct.CTkButton(root, text="Посмотреть расписание", command=checktt, width=210).place(x=250, y=140)
 
 tip = ct.CTkLabel(root, text="Экспорт расписания", font=("Arial", 15, "bold")).place(x=0, y=200)
 exportToExcel = ct.CTkButton(root, text="Экспорт в MS Excel", command=expToExcel, width=210).place(x=0, y=228)
@@ -514,6 +544,11 @@ publisToSite = ct.CTkButton(root, text="Опубликовать на сайт",
 tip = ct.CTkLabel(root, text="Активация лицензии", font=("Arial", 15, "bold")).place(x=250, y=200)
 key = ct.CTkEntry(root, placeholder_text="Введите ключ", width=210)
 key.place(x=250, y=228)
-activateBtn = ct.CTkButton(root, text="Активировать", width=210, command=activateLic).place(x=250, y=256)
+freeKey = ct.CTkButton(root, text="Бесплатный ключ (только win)", command=lambda : os.system("start прочее/ключиАктивации.xlsx"), width=210).place(x=250, y=256)
+activateBtn = ct.CTkButton(root, text="Активировать", width=210, command=activateLic).place(x=250, y=284)
 
+menu = Menu(root)
+menu.add_command(label="О разработчике", command=lambda : wb.open("https://github.com/timursper-apps"))
+
+root.config(menu=menu)
 root.mainloop()
