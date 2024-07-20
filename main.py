@@ -1,3 +1,34 @@
+"""
+ЕСЛИ В БД timetable ОТСУТСТВУЮТ ТАБЛИЦЫ понедельник, вторник, среда, ..., суббота, то требуется их создать:
+
+№ INTEGER, Время TEXT, Предмет TEXT, Учитель TEXT, Кабинет TEXT
+"""
+import sqlite3, customtkinter as ct, pandas as pd, webbrowser as wb
+from CTkMessagebox import CTkMessagebox as mb
+from CTkTable import *
+from tkinter import *
+import config as cfg
+version = "1.5"
+
+activated = True
+
+connection = sqlite3.connect("data/timetable.db")
+cursor = connection.cursor()
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS calls (
+        номерУрока INTEGER,
+        время TEXT          
+    )
+""")
+connection.commit()
+
+root = ct.CTk()
+root.title(f"ИС «Школьное Расписание». v{version} ({cfg.schoolName})")
+root.geometry("460x350")
+root.resizable(False, False)
+#pws.apply_style(root, "aero")
+
 days = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 
 def callsSchedule():
@@ -102,10 +133,7 @@ def delDay():
 def checktt():
     global dayName
 
-    if not activated:
-        ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти", cancel_button="None")
-        if ad.get() == "Перейти":
-            wb.open_new_tab(linkForAds)
+    
 
     cursor.execute(f"SELECT * FROM {dayName.get().lower()} ORDER BY № ASC")
     timetable = cursor.fetchall()
@@ -146,6 +174,7 @@ def expToHTML():
             htmlreport = open(f"{dayName.get()}.html", "r", encoding="utf-8")
             file = htmlreport.read()
             file += f"<hr>Составлено при помощи <a href='https://yop.my1.ru/timetable.html'>«УСОБ. Расписание {version}»</a>"
+            file = file.replace("<table", "<div contenteditable='true'><table").replace("</table>", "</table></div>")
             htmlreport.close()
 
             htmlrep = open(f"{dayName.get()}.html", "w", encoding="utf-8")
@@ -215,11 +244,6 @@ if lessonsWithoutFilter != []:
 def addCabinet():
     global cabinets
 
-    if not activated:
-        ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти", cancel_button="None")
-        if ad.get() == "Перейти":
-            wb.open_new_tab(linkForAds)
-
     cabMan = ct.CTk()
     cabMan.title("Менеджер кабинетов")
     cabMan.resizable(False, False)
@@ -240,10 +264,6 @@ def addCabinet():
         sc.mainloop()
 
     def addCab():
-        if not activated:
-            ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти")
-            if ad.get() == "Перейти":
-                wb.open_new_tab(linkForAds)
         try:
             cabinets.append(nameOfCab.get())
             cursor.execute("INSERT INTO classes (nameOfClass) VALUES (?)", (nameOfCab.get(),))
@@ -254,10 +274,6 @@ def addCabinet():
             mb(title="Добавлено!", message="Кабинет был добавлен!", icon="check")
     
     def remCab():
-        if not activated:
-            ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти")
-            if ad.get() == "Перейти":
-                wb.open_new_tab(linkForAds)
         try:
             cabinets.remove(nameOfCab.get())
             cursor.execute("DELETE FROM classes WHERE nameOfClass = ?", (nameOfCab.get(),))
@@ -280,10 +296,7 @@ def addCabinet():
 def addTeacher():
     global teachers
 
-    if not activated:
-        ad = mb(title="Реклама", message="Заходите в ВК автора!", option_1="Перейти", cancel_button="None")
-        if ad.get() == "Перейти":
-            wb.open_new_tab(linkForAds)
+    
 
     teachMan = ct.CTk()
     teachMan.title("Менеджер учителей")
@@ -594,3 +607,33 @@ def replaceLesson():
     replace = ct.CTkButton(replaceMaster, text="Заменить", command=replacefunc).place(x=0, y=56)
 
     replaceMaster.mainloop()
+
+dayName = ct.CTkComboBox(root, values=days, width=170)
+dayName.place(x=125,y=0)
+
+tip = ct.CTkLabel(root, text="Перед созданием расписания", font=("Arial", 15, "bold")).place(y=28)
+addClass = ct.CTkButton(root, text="Добавить кабинеты", command=addCabinet, width=210).place(y=56)
+addTeachers = ct.CTkButton(root, text="Добавить учителей", command=addTeacher, width=210).place(y=84)
+addLessons = ct.CTkButton(root, text="Добавить предметы", command=addLesson, width=210).place(y=112)
+
+tip = ct.CTkLabel(root, text="Работа с расписанием", font=("Arial", 15, "bold")).place(x=250, y=28)
+checkTtByTeacher = ct.CTkButton(root, text="Просмотр расписания учителя", width=210, command=checkTimetableByTeacher).place(x=250, y=56)
+openDay = ct.CTkButton(root, text="Изменить расписание на день", command=operationsWithDay, width=210).place(x=250, y=84)
+callsScheduleB = ct.CTkButton(root, text="Расписание звонков", command=callsSchedule, width=210).place(x=250, y=112)
+checkTimeTable = ct.CTkButton(root, text="Посмотреть расписание", command=checktt, width=210).place(x=250, y=140)
+
+tip = ct.CTkLabel(root, text="Экспорт расписания", font=("Arial", 15, "bold")).place(x=0, y=200)
+exportToExcel = ct.CTkButton(root, text="Экспорт в MS Excel", command=expToExcel, width=210).place(x=0, y=228)
+exportToHTML = ct.CTkButton(root, text="Экспорт в HTML", command=expToHTML, width=210).place(x=0, y=256)
+
+tip = ct.CTkLabel(root, text="Замены в расписании", font=("Arial", 15, "bold")).place(x=250, y=200)
+cancelLessonB = ct.CTkButton(root, text="Отменить урок", command=cancelLesson, width=210).place(x=250, y=228)
+replaceLessonB = ct.CTkButton(root, text="Заменить урок", command=replaceLesson, width=210).place(x=250, y=256)
+
+if __name__ == "__main__":
+    supportAuthor = mb(root, title="Поддержите орган", message=f"Переходите в сообщество {cfg.organName}", option_1="Перейти", cancel_button="None")
+
+    if supportAuthor.get() == "Перейти":
+        wb.open(cfg.organLink)
+
+    root.mainloop()
