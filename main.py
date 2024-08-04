@@ -7,8 +7,8 @@ import sqlite3, customtkinter as ct, pandas as pd, webbrowser as wb
 from CTkMessagebox import CTkMessagebox as mb
 from CTkTable import *
 from tkinter import *
-import config as cfg
-version = "1.5"
+
+version = "1.6.1"
 
 activated = True
 
@@ -21,10 +21,9 @@ cursor.execute("""
         время TEXT          
     )
 """)
-connection.commit()
 
 root = ct.CTk()
-root.title(f"ИС «Школьное Расписание». v{version} ({cfg.schoolName})")
+root.title(f"ИС «ШР». v{version}")
 root.geometry("460x350")
 root.resizable(False, False)
 #pws.apply_style(root, "aero")
@@ -224,8 +223,6 @@ calls = []
 for x in range(len(callsWithoutFilter)):
     calls.append(str(callsWithoutFilter[x]).replace("(","").replace(")","").replace("'", "").replace(",",""))
 
-print(calls)
-
 cursor.execute("""CREATE TABLE IF NOT EXISTS lessons (
                     предмет TEXT
                )
@@ -295,8 +292,6 @@ def addCabinet():
 
 def addTeacher():
     global teachers
-
-    
 
     teachMan = ct.CTk()
     teachMan.title("Менеджер учителей")
@@ -630,10 +625,4 @@ tip = ct.CTkLabel(root, text="Замены в расписании", font=("Aria
 cancelLessonB = ct.CTkButton(root, text="Отменить урок", command=cancelLesson, width=210).place(x=250, y=228)
 replaceLessonB = ct.CTkButton(root, text="Заменить урок", command=replaceLesson, width=210).place(x=250, y=256)
 
-if __name__ == "__main__":
-    supportAuthor = mb(root, title="Поддержите орган", message=f"Переходите в сообщество {cfg.organName}", option_1="Перейти", cancel_button="None")
-
-    if supportAuthor.get() == "Перейти":
-        wb.open(cfg.organLink)
-
-    root.mainloop()
+root.mainloop()
